@@ -132,6 +132,15 @@ def test_email_refused_in_ci(monkeypatch):
     with pytest.raises(EmailRefused):
         ch.send("team@example.test", "review", "body", explicit_opt_in=True)
 
+
+def test_email_dry_run_records_even_in_ci(monkeypatch):
+    # Regression: the runner sets CI, and a dry run must still return
+    # its record instead of raising, because it transmits nothing.
+    monkeypatch.setenv("CI", "true")
+    ch = EmailChannel()
+    r = ch.send("team@example.test", "review", "body")
+    assert r["sent"] is False and r["dry_run"] is True
+
 def test_authorizer_denies_direct_rowid_read():
     # The narrow internal trailing read must not become a rowid leak.
     con = create_governed_connection()

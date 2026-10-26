@@ -17,10 +17,13 @@ class EmailChannel:
         self.dry_run = dry_run
 
     def send(self, to, subject, body, explicit_opt_in=False):
-        if os.environ.get("CI", "").lower() in ("true", "1"):
-            raise EmailRefused("refused: CI environment")
+        # Dry-run first: it transmits nothing, so it must never raise,
+        # even when the runner sets CI. The CI refusal below only guards
+        # real sends, which is what it was meant to guard.
         if self.dry_run and not explicit_opt_in:
             return {"sent": False, "dry_run": True, "to": to, "subject": subject}
+        if os.environ.get("CI", "").lower() in ("true", "1"):
+            raise EmailRefused("refused: CI environment")
         if not explicit_opt_in:
             raise EmailRefused("refused: sending needs explicit opt-in")
         # No real transport is wired in this scaffold; an opt-in send is
